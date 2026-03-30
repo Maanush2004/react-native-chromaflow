@@ -12,7 +12,14 @@
     ],
     "androidCxxLibName": "NitroChromaflow"
   },
-  "autolinking": {},
+  "autolinking": {
+    "ChromaFlow": {
+      "all": {
+        "language": "c++",
+        "implementationClassName": "HybridChromaFlow"
+      }
+    }
+  },
   "ignorePaths": [
     "**/node_modules"
   ]

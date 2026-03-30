@@ -1,0 +1,9 @@
+[submodule "cpp/libpng"]
+	path = cpp/libpng
+	url = https://github.com/pnggroup/libpng
+[submodule "cpp/libtiff"]
+	path = cpp/libtiff
+	url = https://gitlab.com/libtiff/libtiff
+[submodule "cpp/jabcode"]
+	path = cpp/jabcode
+	url = https://github.com/jabcode/jabcode

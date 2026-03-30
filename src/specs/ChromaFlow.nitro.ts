@@ -1,6 +1,6 @@
 import { type HybridObject } from 'react-native-nitro-modules'
 
-interface ChromaFlow extends HybridObject<{ android: 'c++' }> {
+export interface ChromaFlow extends HybridObject<{ ios: 'c++', android: 'c++' }> {
     encode(
         data: ArrayBuffer,
         colorNumber: number,
