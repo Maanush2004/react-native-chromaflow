@@ -35,7 +35,7 @@
     "lint-ci": "eslint \"**/*.{js,ts,tsx}\" -f @jamesacarr/github-actions",
     "typescript": "tsc",
     "specs": "tsc --noEmit false && nitrogen --logLevel=\"debug\"",
-    "prepare": "tsc --noEmit false && nitrogen --logLevel=\"debug\""
+    "prepare": "git submodule update --init --recursive && tsc --noEmit false && nitrogen --logLevel=\"debug\""
   },
   "keywords": [
     "react-native",
