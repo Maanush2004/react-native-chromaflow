@@ -12,6 +12,8 @@ set(PNG_BUILD_ZLIB OFF CACHE BOOL "" FORCE)
 add_subdirectory(../cpp/libpng libpng)
 
 # ── libtiff ──────────────────────────────────────────────────────────────────
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/libtiff/build)
+file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/libtiff/build/CMakeLists.txt "# placeholder\n")
 set(tiff-tools   OFF CACHE BOOL "" FORCE)
 set(tiff-tests   OFF CACHE BOOL "" FORCE)
 set(tiff-docs    OFF CACHE BOOL "" FORCE)
