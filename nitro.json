@@ -1,0 +1,19 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "chromaflow"
+  ],
+  "ios": {
+    "iosModuleName": "NitroChromaflow"
+  },
+  "android": {
+    "androidNamespace": [
+      "chromaflow"
+    ],
+    "androidCxxLibName": "NitroChromaflow"
+  },
+  "autolinking": {},
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
