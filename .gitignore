@@ -81,3 +81,8 @@ lib/
 .eslintcache
 .cache
 *.tsbuildinfo
+
+# Build dependencies
+cpp/jabcode
+cpp/libpng
+cpp/libtiff
