@@ -64,4 +64,5 @@ target_link_libraries(
         tiff
         png_static
         z
+        android
 )

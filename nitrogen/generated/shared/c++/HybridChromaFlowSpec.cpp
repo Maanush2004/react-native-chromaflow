@@ -16,6 +16,7 @@ namespace margelo::nitro::chromaflow {
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("encode", &HybridChromaFlowSpec::encode);
       prototype.registerHybridMethod("decode", &HybridChromaFlowSpec::decode);
+      prototype.registerHybridMethod("describeBuffer", &HybridChromaFlowSpec::describeBuffer);
     });
   }
 

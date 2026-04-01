@@ -1,4 +1,5 @@
 #include "HybridChromaFlow.hpp"
+#include <android/hardware_buffer.h>
 
 extern "C" {
     uint8_t* cf_encode(const uint8_t* data,
@@ -69,6 +70,30 @@ std::shared_ptr<ArrayBuffer> HybridChromaFlow::decode(
         (size_t)outLen,
         [buf]() { cf_free(buf); }
     );
+}
+
+std::string HybridChromaFlow::describeBuffer(uint64_t pointer)
+{
+  AHardwareBuffer* buffer = reinterpret_cast<AHardwareBuffer*>(pointer);
+  AHardwareBuffer_Desc desc;
+  AHardwareBuffer_describe(buffer, &desc);
+
+  std::string format;
+  switch (desc.format) {
+    case AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM:  format = "RGBA8";    break;
+    case AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM:  format = "RGBX8";    break;
+    case AHARDWAREBUFFER_FORMAT_R8G8B8_UNORM:    format = "RGB8";      break;
+    case AHARDWAREBUFFER_FORMAT_R5G6B5_UNORM:    format = "RGB565";    break;
+    case AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420:    format = "YUV420";    break;
+    case AHARDWAREBUFFER_FORMAT_YCbCr_P010:      format = "YUV_P010";  break;
+    default: format = "unknown(" + std::to_string(desc.format) + ")"; break;
+  }
+
+  return "format=" + format +
+         " width="  + std::to_string(desc.width)  +
+         " height=" + std::to_string(desc.height) +
+         " stride=" + std::to_string(desc.stride) +
+         " layers=" + std::to_string(desc.layers);
 }
 
 } // namespace margelo::nitro::chromaflow

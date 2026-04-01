@@ -20,6 +20,8 @@ public:
     std::shared_ptr<ArrayBuffer> decode(
         const std::shared_ptr<ArrayBuffer>& pngData
     ) override;
+
+    std::string describeBuffer(uint64_t pointer) override;
 };
 
 } // namespace margelo::nitro::chromaflow

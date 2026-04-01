@@ -1,4 +1,4 @@
-import { type HybridObject } from 'react-native-nitro-modules'
+import { type HybridObject, type UInt64 } from 'react-native-nitro-modules'
 
 export interface ChromaFlow extends HybridObject<{ ios: 'c++', android: 'c++' }> {
     encode(
@@ -11,4 +11,6 @@ export interface ChromaFlow extends HybridObject<{ ios: 'c++', android: 'c++' }>
     ): ArrayBuffer
 
     decode(pngData: ArrayBuffer): ArrayBuffer
+
+    describeBuffer(pointer: UInt64): string
 }

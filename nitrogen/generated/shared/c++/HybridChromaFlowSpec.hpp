@@ -16,6 +16,7 @@
 
 
 #include <NitroModules/ArrayBuffer.hpp>
+#include <string>
 
 namespace margelo::nitro::chromaflow {
 
@@ -50,6 +51,7 @@ namespace margelo::nitro::chromaflow {
       // Methods
       virtual std::shared_ptr<ArrayBuffer> encode(const std::shared_ptr<ArrayBuffer>& data, double colorNumber, double moduleSize, double symbolWidth, double symbolHeight, double eccLevel) = 0;
       virtual std::shared_ptr<ArrayBuffer> decode(const std::shared_ptr<ArrayBuffer>& pngData) = 0;
+      virtual std::string describeBuffer(uint64_t pointer) = 0;
 
     protected:
       // Hybrid Setup
