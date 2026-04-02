@@ -10,6 +10,8 @@ extern "C" {
                        int symbol_width,
                        int symbol_height,
                        int ecc_level,
+                       int symbol_version_x,
+                       int symbol_version_y,
                        int* out_png_len);
 
     uint8_t* cf_decode(const uint8_t* png_data,
@@ -29,7 +31,9 @@ std::shared_ptr<ArrayBuffer> HybridChromaFlow::encode(
     double moduleSize,
     double symbolWidth,
     double symbolHeight,
-    double eccLevel)
+    double eccLevel,
+    double symbolVersionX,
+    double symbolVersionY)
 {
     int pngLen = 0;
     uint8_t* buf = cf_encode(
@@ -40,6 +44,8 @@ std::shared_ptr<ArrayBuffer> HybridChromaFlow::encode(
         (int)symbolWidth,
         (int)symbolHeight,
         (int)eccLevel,
+        (int)symbolVersionX,
+        (int)symbolVersionY,
         &pngLen
     );
 

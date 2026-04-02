@@ -13,6 +13,7 @@
  *                      int color_number,        int module_size,
  *                      int symbol_width,        int symbol_height,
  *                      int ecc_level,
+ *                      int symbol_version_x,    int symbol_version_y,
  *                      int* out_png_len)
  *
  *   uint8_t* cf_decode(const uint8_t* png_data, int png_len,
@@ -37,6 +38,9 @@
  * Parameters mirror the subset of jabwriter CLI options that ChromaFlow
  * actually uses.  Pass 0 for symbol_width / symbol_height to let the
  * library choose.  ecc_level 0 uses the library default (3).
+ * symbol_version_x / symbol_version_y set the side-version of the single
+ * master symbol (each 1–32, matching --symbol-version x y in jabwriter);
+ * pass 0 for either to leave it at the library default.
  *
  * Returns a malloc'd PNG buffer.  *out_png_len is set to its byte length.
  * Returns NULL on any failure.
@@ -48,6 +52,8 @@ uint8_t* cf_encode(const uint8_t* data,
                    int            symbol_width,
                    int            symbol_height,
                    int            ecc_level,
+                   int            symbol_version_x,
+                   int            symbol_version_y,
                    int*           out_png_len)
 {
     *out_png_len = 0;
@@ -62,10 +68,12 @@ uint8_t* cf_encode(const uint8_t* data,
     jab_encode* enc = createEncode(color_number > 0 ? color_number : 8, 1);
     if (!enc) { free(jdata); return NULL; }
 
-    if (module_size  > 0) enc->module_size          = module_size;
-    if (symbol_width > 0) enc->master_symbol_width  = symbol_width;
-    if (symbol_height> 0) enc->master_symbol_height = symbol_height;
-    if (ecc_level    > 0) enc->symbol_ecc_levels[0] = (jab_byte)ecc_level;
+    if (module_size      > 0) enc->module_size           = module_size;
+    if (symbol_width     > 0) enc->master_symbol_width   = symbol_width;
+    if (symbol_height    > 0) enc->master_symbol_height  = symbol_height;
+    if (ecc_level        > 0) enc->symbol_ecc_levels[0]  = (jab_byte)ecc_level;
+    if (symbol_version_x > 0) enc->symbol_versions[0].x = symbol_version_x;
+    if (symbol_version_y > 0) enc->symbol_versions[0].y = symbol_version_y;
 
     /* ── 3. Generate JABCode bitmap ── */
     if (generateJABCode(enc, jdata) != 0) {

@@ -7,7 +7,9 @@ export interface ChromaFlow extends HybridObject<{ ios: 'c++', android: 'c++' }>
         moduleSize: number,
         symbolWidth: number,
         symbolHeight: number,
-        eccLevel: number
+        eccLevel: number,
+        symbolVersionX: number,
+        symbolVersionY: number
     ): ArrayBuffer
 
     decode(pngData: ArrayBuffer): ArrayBuffer

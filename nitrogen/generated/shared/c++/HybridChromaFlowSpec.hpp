@@ -48,7 +48,7 @@ namespace margelo::nitro::chromaflow {
 
     public:
       // Methods
-      virtual std::shared_ptr<ArrayBuffer> encode(const std::shared_ptr<ArrayBuffer>& data, double colorNumber, double moduleSize, double symbolWidth, double symbolHeight, double eccLevel) = 0;
+      virtual std::shared_ptr<ArrayBuffer> encode(const std::shared_ptr<ArrayBuffer>& data, double colorNumber, double moduleSize, double symbolWidth, double symbolHeight, double eccLevel, double symbolVersionX, double symbolVersionY) = 0;
       virtual std::shared_ptr<ArrayBuffer> decode(const std::shared_ptr<ArrayBuffer>& pngData) = 0;
       virtual std::shared_ptr<ArrayBuffer> decodeRaw(uint64_t buffer) = 0;
 

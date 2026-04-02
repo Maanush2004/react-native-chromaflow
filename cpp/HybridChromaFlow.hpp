@@ -14,7 +14,9 @@ public:
         double moduleSize,
         double symbolWidth,
         double symbolHeight,
-        double eccLevel
+        double eccLevel,
+        double symbolVersionX,
+        double symbolVersionY
     ) override;
 
     std::shared_ptr<ArrayBuffer> decode(
