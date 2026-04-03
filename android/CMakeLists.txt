@@ -32,7 +32,7 @@ file(GLOB JABCODE_SOURCES CONFIGURE_DEPENDS
 add_library(jabcode STATIC ${JABCODE_SOURCES})
 target_include_directories(jabcode
     PUBLIC  ../cpp/jabcode/src/jabcode/include
-    PRIVATE ../cpp/jabcode/src/jabcode
+    PUBLIC ../cpp/jabcode/src/jabcode
 )
 target_compile_features(jabcode PRIVATE c_std_11)
 target_compile_options(jabcode  PRIVATE -O2)

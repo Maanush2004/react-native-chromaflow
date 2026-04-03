@@ -17,6 +17,7 @@ namespace margelo::nitro::chromaflow {
       prototype.registerHybridMethod("encode", &HybridChromaFlowSpec::encode);
       prototype.registerHybridMethod("decode", &HybridChromaFlowSpec::decode);
       prototype.registerHybridMethod("decodeRaw", &HybridChromaFlowSpec::decodeRaw);
+      prototype.registerHybridMethod("getMaxCapacity", &HybridChromaFlowSpec::getMaxCapacity);
     });
   }
 

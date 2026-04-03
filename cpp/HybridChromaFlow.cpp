@@ -3,6 +3,14 @@
 
 extern "C" {
     #include "jabcode.h"
+    int cf_get_max_capacity(int color_number,
+                            int module_size,
+                            int symbol_width,
+                            int symbol_height,
+                            int ecc_level,
+                            int symbol_version_x,
+                            int symbol_version_y);
+
     uint8_t* cf_encode(const uint8_t* data,
                        int data_len,
                        int color_number,
@@ -170,6 +178,32 @@ std::shared_ptr<ArrayBuffer> HybridChromaFlow::decodeRaw(uint64_t buffer) {
         [decoded]() { free(decoded); }
     );
     
+}
+
+double HybridChromaFlow::getMaxCapacity(
+    double colorNumber,
+    double moduleSize,
+    double symbolWidth,
+    double symbolHeight,
+    double eccLevel,
+    double symbolVersionX,
+    double symbolVersionY)
+{
+    int maxCapacity = cf_get_max_capacity(
+        colorNumber,
+        moduleSize,
+        symbolWidth,
+        symbolHeight,
+        eccLevel,
+        symbolVersionX,
+        symbolVersionY
+    );
+
+    if (maxCapacity == 0) {
+        throw std::runtime_error("Failed to find JABCode capacity for the given values");
+    }
+
+    return maxCapacity;
 }
 
 } // namespace margelo::nitro::chromaflow

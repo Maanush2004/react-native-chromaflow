@@ -26,6 +26,16 @@ public:
     std::shared_ptr<ArrayBuffer> decodeRaw(
         uint64_t buffer
     ) override;
+
+    double getMaxCapacity(
+         double colorNumber,
+        double moduleSize,
+        double symbolWidth,
+        double symbolHeight,
+        double eccLevel,
+        double symbolVersionX,
+        double symbolVersionY       
+    ) override;
 };
 
 } // namespace margelo::nitro::chromaflow

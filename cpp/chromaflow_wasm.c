@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <png.h>
 #include "jabcode.h"
+#include "encoder.h"   /* character_size[], latch_shift_to[][], ecclevel2wcwr[],
+                          getSymbolCapacity(), InitSymbols()                     */
 
 /*
  * chromaflow_wasm.c — thin WASM-facing wrappers around libjabcode.
@@ -19,16 +21,154 @@
  *   uint8_t* cf_decode(const uint8_t* png_data, int png_len,
  *                      int* out_data_len)
  *
+ *   int      cf_get_max_capacity(int color_number,
+ *                                int module_size,
+ *                                int symbol_width,        int symbol_height,
+ *                                int ecc_level,
+ *                                int symbol_version_x,    int symbol_version_y)
+ *
  *   void     cf_free(uint8_t* ptr)
  *
  * Both encode and decode return a malloc'd buffer that the caller must
  * release with cf_free() once it has copied the data into a JS typed array.
  * NULL is returned on failure; out_*_len is set to 0 in that case.
  *
+ * cf_get_max_capacity returns the maximum number of raw bytes that can be
+ * encoded in a single JABCode frame with the given parameters, or 0 on
+ * failure. Call this before cf_encode to size your payload correctly.
+ *
  * Compile additions (append to the existing emmake line):
- *   -sEXPORTED_FUNCTIONS="['_cf_encode','_cf_decode','_cf_free','_malloc','_free']"
+ *   -sEXPORTED_FUNCTIONS="['_cf_encode','_cf_decode','_cf_free','_cf_get_max_capacity','_malloc','_free']"
  *   -sEXPORTED_RUNTIME_METHODS="['ccall','cwrap']"
  */
+
+/* ── Function definitions ──────────────────────────────────────────────────── */
+/* Definitions are from jabcode repo, src/jabcode/encoder.c */
+jab_boolean InitSymbols(jab_encode* enc);
+jab_int32 getSymbolCapacity(jab_encode* enc, jab_int32 index);
+
+/* ── Capacity ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Return the maximum number of raw bytes that fit in one JABCode frame.
+ *
+ * The function mirrors the capacity accounting in fitDataIntoSymbols()
+ * but without any actual data — it computes the net bit capacity, subtracts
+ * all structural overhead (flag bit, metadata S field, slave metadata), then
+ * converts the remaining bits to bytes under worst-case byte-mode encoding.
+ *
+ * Byte-mode encoding costs (all values read from encoder.h constants):
+ *
+ *   shift_bits    = latch_shift_to[0][13]
+ *                   Row 0:   currently in uppercase (JABCode always starts here)
+ *                   Col 13:  shifting TO byte mode — col = 7 + 6 = 13 because
+ *                            cols 0-6 are latches and cols 7-13 are shifts,
+ *                            and byte mode is mode index 6.
+ *                            latch_shift_to[0][6] = ENC_MAX so a direct latch
+ *                            into byte mode from uppercase is not possible;
+ *                            shift (col 13) is the only entry point.
+ *
+ *   header_bits   = 4 + 13 = 17  (from encodeData())
+ *                   Always writes 4 bits for the byte count.
+ *                   If count > 15, writes 13 more bits for the extended count.
+ *                   We assume worst case (> 15 bytes) since payload size is
+ *                   unknown at capacity-query time.
+ *
+ *   bits_per_char = character_size[6] = 8
+ *                   character_size[] is indexed by mode: {5,5,4,4,5,6,8}
+ *                   Index 6 is byte mode = 8 bits per raw byte.
+ */
+static jab_int32 getMaxDataCapacity(jab_encode* enc)
+{
+    jab_int32 capacity[enc->symbol_number];
+    jab_int32 net_capacity[enc->symbol_number];
+    jab_int32 total_net_capacity = 0;
+
+    /* Calculate net capacity of each symbol after ECC overhead */
+    for (jab_int32 i = 0; i < enc->symbol_number; i++)
+    {
+        capacity[i] = getSymbolCapacity(enc, i);
+        enc->symbols[i].wcwr[0] = ecclevel2wcwr[enc->symbol_ecc_levels[i]][0];
+        enc->symbols[i].wcwr[1] = ecclevel2wcwr[enc->symbol_ecc_levels[i]][1];
+        net_capacity[i] = (capacity[i] / enc->symbols[i].wcwr[1]) * enc->symbols[i].wcwr[1]
+                        - (capacity[i] / enc->symbols[i].wcwr[1]) * enc->symbols[i].wcwr[0];
+        total_net_capacity += net_capacity[i];
+    }
+
+    /* Subtract per-symbol structural overhead to get bits available for data */
+    jab_int32 total_data_capacity_bits = 0;
+    for (jab_int32 i = 0; i < enc->symbol_number; i++)
+    {
+        jab_int32 overhead = 0;
+
+        /* 1 flag bit per symbol (always present) */
+        overhead += 1;
+
+        /* Host metadata S field: 4 bits for master symbol, 3 bits for slaves */
+        overhead += (i == 0) ? 4 : 3;
+
+        /* Each slave symbol's metadata is embedded in its host's payload */
+        for (jab_int32 j = 0; j < 4; j++)
+        {
+            if (enc->symbols[i].slaves[j] > 0)
+                overhead += enc->symbols[enc->symbols[i].slaves[j]].metadata->length;
+        }
+
+        jab_int32 usable_bits = net_capacity[i] - overhead;
+        if (usable_bits < 0) usable_bits = 0;
+        total_data_capacity_bits += usable_bits;
+    }
+
+    /* Convert bit capacity to raw bytes under worst-case byte-mode encoding */
+    jab_int32 shift_bits    = latch_shift_to[0][13]; /* 11: uppercase -> byte shift  */
+    jab_int32 header_bits   = 4 + 13;                /* 17: byte count header        */
+    jab_int32 bits_per_char = character_size[6];     /*  8: bits per byte in byte mode */
+
+    jab_int32 overhead_bits = shift_bits + header_bits;
+    jab_int32 max_raw_bytes = (total_data_capacity_bits - overhead_bits) / bits_per_char;
+
+    if (max_raw_bytes < 0) max_raw_bytes = 0;
+    return max_raw_bytes;
+}
+
+/*
+ * WASM-exported capacity query.
+ *
+ * Creates a minimal single-symbol encoder with the given parameters,
+ * runs InitSymbols() to populate the metadata structures that the
+ * capacity calculation depends on, then returns the raw byte limit.
+ *
+ * Returns 0 on any failure (bad parameters, allocation error, etc.).
+ */
+int cf_get_max_capacity(int color_number,
+                        int module_size,
+                        int symbol_width,
+                        int symbol_height,
+                        int ecc_level,
+                        int symbol_version_x,
+                        int symbol_version_y)
+{
+    jab_encode* enc = createEncode(color_number > 0 ? color_number : 8, 1);
+    if (!enc) return 0;
+
+    if (module_size      > 0) enc->module_size           = module_size;
+    if (symbol_width     > 0) enc->master_symbol_width   = symbol_width;
+    if (symbol_height    > 0) enc->master_symbol_height  = symbol_height;
+    if (ecc_level        > 0) enc->symbol_ecc_levels[0]  = (jab_byte)ecc_level;
+    if (symbol_version_x > 0) enc->symbol_versions[0].x = symbol_version_x;
+    if (symbol_version_y > 0) enc->symbol_versions[0].y = symbol_version_y;
+
+    /* InitSymbols must be called before capacity calculation —
+     * it sets up the metadata structures that getMaxDataCapacity reads. */
+    if (!InitSymbols(enc)) {
+        destroyEncode(enc);
+        return 0;
+    }
+
+    jab_int32 result = getMaxDataCapacity(enc);
+    destroyEncode(enc);
+    return (int)result;
+}
 
 /* ── Encoder ──────────────────────────────────────────────────────────────── */
 
